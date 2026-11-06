@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import 'tailwindcss';
+
+@theme {
+    --color-bg-primary: #0D1117;
+    --color-bg-secondary: #161B22;
+    --color-bg-card: #1A1F2E;
+    --color-accent-orange: #FF6B00;
+    --color-accent-orange-dark: #E65100;
+    --color-accent-teal: #00BFA6;
+    --color-accent-cyan: #26C6DA;
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #B0BEC5;
+    --color-text-muted: #78909C;
+    --color-border-dark: #2D333B;
+    --font-sans: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+}
+
+.glow-orange {
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.3), 0 0 30px rgba(255, 107, 0, 0.1);
+}
+.glow-teal {
+    box-shadow: 0 0 15px rgba(0, 191, 166, 0.3), 0 0 30px rgba(0, 191, 166, 0.1);
+}
+.glow-orange-hover:hover {
+    box-shadow: 0 0 20px rgba(255, 107, 0, 0.4), 0 0 40px rgba(255, 107, 0, 0.2);
+}
+
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 20px rgba(255, 107, 0, 0.2);
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0D1117; }
+::-webkit-scrollbar-thumb { background: #2D333B; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #444C56; }
