@@ -99,9 +99,21 @@
 
         @if($snapToken && !str_contains($snapToken, 'MOCK'))
         {{-- Real Midtrans Snap Button --}}
-        <button id="pay-button" class="w-full bg-accent-orange hover:bg-accent-orange-dark text-white font-bold py-4 rounded-xl transition-all text-lg flex items-center justify-center gap-2">
+        <button id="pay-button" class="w-full bg-accent-orange hover:bg-accent-orange-dark text-white font-bold py-4 rounded-xl transition-all text-lg flex items-center justify-center gap-2 cursor-pointer">
             <span>🔒</span> Bayar Sekarang — {{ $order->formatted_total }}
         </button>
+        <div class="grid sm:grid-cols-2 gap-3 mt-3">
+            <a href="{{ route('orders.show', $order) }}" class="w-full bg-bg-secondary hover:bg-border-dark border border-border-dark text-text-secondary hover:text-white font-medium py-2.5 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2">
+                <span>🔄</span> Cek Status Pembayaran
+            </a>
+            <form action="{{ route('orders.simulatePayment', $order) }}" method="POST">
+                @csrf
+                <button type="submit" class="w-full bg-accent-teal/15 hover:bg-accent-teal/25 border border-accent-teal/40 text-accent-teal font-medium py-2.5 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <span>⚡</span> Simulasi Lunas Instan (Demo)
+                </button>
+            </form>
+        </div>
+        <p class="text-center text-text-muted text-xs mt-2">💡 Setelah bayar kode VA/QRIS di <a href="https://simulator.sandbox.midtrans.com" target="_blank" class="text-accent-cyan hover:underline">Midtrans Simulator</a>, klik <b>Cek Status Pembayaran</b> — atau klik <b>Simulasi Lunas Instan</b> untuk demo cepat.</p>
         @else
         {{-- Simulation button for demo --}}
         <form action="{{ route('orders.simulatePayment', $order) }}" method="POST">
@@ -173,7 +185,7 @@
                 alert('Pembayaran gagal atau dibatalkan.');
             },
             onClose: function() {
-                // User closed popup
+                window.location.reload();
             }
         });
     });

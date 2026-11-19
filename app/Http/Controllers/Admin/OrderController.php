@@ -25,6 +25,10 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
+        if ($order->status === 'pending') {
+            \App\Services\MidtransService::syncTransactionStatus($order);
+            $order->refresh();
+        }
         $order->load('items.product', 'user', 'payment', 'payments');
         return view('admin.orders.show', compact('order'));
     }

@@ -19,6 +19,13 @@ class OrderController extends Controller
         if ($order->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             abort(403);
         }
+
+        // Auto-sync payment status directly from Midtrans API if order is still pending
+        if ($order->status === 'pending') {
+            MidtransService::syncTransactionStatus($order);
+            $order->refresh();
+        }
+
         $order->load('items.product', 'payment', 'payments');
 
         $snapToken = $order->snap_token;

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -17,7 +18,7 @@ class MidtransService
 
         $params = [
             'transaction_details' => [
-                'order_id' => $order->order_number . '-' . time(),
+                'order_id' => $order->order_number,
                 'gross_amount' => (int) $order->total_price,
             ],
             'customer_details' => [
@@ -43,7 +44,9 @@ class MidtransService
         }
 
         $serverKey = config('midtrans.server_key');
-        $apiUrl = config('midtrans.api_url') . '/snap/v1/transactions' ;
+        $snapApiUrl = config('midtrans.is_production')
+            ? 'https://app.midtrans.com/snap/v1/transactions'
+            : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
         // For sandbox demo, if the server key is default/placeholder, return a mock token
         if (str_contains($serverKey, 'XXXX')) {
@@ -54,7 +57,7 @@ class MidtransService
         try {
             $response = Http::withBasicAuth($serverKey, '')
                 ->acceptJson()
-                ->post('https://app.sandbox.midtrans.com/snap/v1/transactions', $params);
+                ->post($snapApiUrl, $params);
 
             if ($response->successful()) {
                 return $response->json('token');
@@ -66,6 +69,79 @@ class MidtransService
             Log::error('Midtrans Exception', ['message' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /**
+     * Query Midtrans API directly to sync transaction status for a pending order
+     */
+    public static function syncTransactionStatus(Order $order): bool
+    {
+        $serverKey = config('midtrans.server_key');
+        if (!$serverKey || str_contains($serverKey, 'XXXX')) {
+            return false;
+        }
+
+        // Check both exact order_number and any stored midtrans order_id from previous payment logs
+        $candidateIds = array_unique(array_filter([
+            $order->payment?->raw_response['order_id'] ?? null,
+            $order->order_number,
+        ]));
+
+        $apiUrl = config('midtrans.api_url');
+
+        foreach ($candidateIds as $midtransOrderId) {
+            try {
+                $response = Http::withBasicAuth($serverKey, '')
+                    ->acceptJson()
+                    ->timeout(5)
+                    ->get("{$apiUrl}/{$midtransOrderId}/status");
+
+                if (!$response->successful()) {
+                    continue;
+                }
+
+                $data = $response->json();
+                $statusCode = (string) ($data['status_code'] ?? '');
+                if (!in_array($statusCode, ['200', '201', '202'])) {
+                    continue;
+                }
+
+                $transactionStatus = $data['transaction_status'] ?? '';
+                $paymentType = $data['payment_type'] ?? '';
+                $transactionId = $data['transaction_id'] ?? $midtransOrderId;
+                $grossAmount = $data['gross_amount'] ?? $order->total_price;
+
+                Payment::updateOrCreate(
+                    ['transaction_id' => $transactionId],
+                    [
+                        'order_id' => $order->id,
+                        'payment_type' => $paymentType,
+                        'gross_amount' => $grossAmount,
+                        'transaction_status' => $transactionStatus,
+                        'payment_time' => $data['settlement_time'] ?? $data['transaction_time'] ?? now(),
+                        'raw_response' => $data,
+                    ]
+                );
+
+                $newStatus = match ($transactionStatus) {
+                    'capture', 'settlement' => 'paid',
+                    'pending' => 'pending',
+                    'deny', 'cancel' => 'cancelled',
+                    'expire' => 'expired',
+                    default => $order->status,
+                };
+
+                if ($order->status === 'pending' && $newStatus !== 'pending') {
+                    $order->update(['status' => $newStatus]);
+                }
+
+                return true;
+            } catch (\Exception $e) {
+                Log::warning('Midtrans status check failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        return false;
     }
 
     /**
