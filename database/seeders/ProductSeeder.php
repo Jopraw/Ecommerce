@@ -10,10 +10,6 @@ class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('PRAGMA foreign_keys = OFF;');
-        DB::table('products')->delete();
-        DB::statement('PRAGMA foreign_keys = ON;');
-
         $products = [
             // Nike
             [
@@ -208,8 +204,9 @@ class ProductSeeder extends Seeder
             ],
         ];
 
+        // Idempotent: aman dijalankan berulang (tidak menduplikasi & tidak mereset stok)
         foreach ($products as $product) {
-            Product::create($product);
+            Product::firstOrCreate(['name' => $product['name']], $product);
         }
     }
 }

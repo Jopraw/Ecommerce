@@ -10,18 +10,15 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin AstroStep',
-            'email' => 'admin@astrostep.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-        ]);
+        // Idempotent: aman dijalankan berulang
+        User::firstOrCreate(
+            ['email' => 'admin@astrostep.com'],
+            ['name' => 'Admin AstroStep', 'password' => Hash::make('password'), 'role' => 'admin']
+        );
 
-        User::create([
-            'name' => 'Budi Santoso',
-            'email' => 'budi@email.com',
-            'password' => Hash::make('password'),
-            'role' => 'customer',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'budi@email.com'],
+            ['name' => 'Budi Santoso', 'password' => Hash::make('password'), 'role' => 'customer']
+        );
     }
 }
