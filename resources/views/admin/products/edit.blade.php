@@ -20,6 +20,15 @@
                 </select>
             </div>
             <div>
+                <label class="block text-sm font-medium mb-1">Merek (Brand)</label>
+                <input type="text" name="brand" list="brand-list" value="{{ old('brand', $product->brand ?? '') }}" placeholder="Contoh: Nike, Kanky, Ortuseight" class="w-full bg-bg-secondary border border-border-dark rounded-lg px-4 py-3 text-white outline-none focus:border-accent-orange">
+                <datalist id="brand-list">
+                    @foreach(['Nike', 'Adidas', 'New Balance', 'Asics', 'Ortuseight', 'Kanky'] as $b)
+                        <option value="{{ $b }}">
+                    @endforeach
+                </datalist>
+            </div>
+            <div>
                 <label class="block text-sm font-medium mb-1">Deskripsi</label>
                 <textarea name="description" rows="3" class="w-full bg-bg-secondary border border-border-dark rounded-lg px-4 py-3 text-white outline-none focus:border-accent-orange resize-none">{{ old('description', $product->description) }}</textarea>
             </div>
